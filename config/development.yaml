@@ -1,0 +1,167 @@
+
+# ----------------------------------------------------------------------------
+# MONGODB CONFIGURATION
+# ----------------------------------------------------------------------------
+mongodb:
+  connection_string: "mongodb://localhost:27017/"
+  database_name: "MarketMuni"
+  collection_name: "NewsStorage"
+  max_pool_size: 100
+  timeout_ms: 5000
+  max_filter_ids: 1000  # Threshold for broad filter optimization 
+
+# ----------------------------------------------------------------------------
+# REDIS CACHE
+# ----------------------------------------------------------------------------
+redis:
+  enabled: true
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: null  # Set via REDIS_PASSWORD env var in production
+  ttl_seconds: 86400  # 24 hours
+  connection_pool:
+    max_connections: 50
+    socket_timeout: 5
+    socket_connect_timeout: 5
+
+# ----------------------------------------------------------------------------
+# DEDUPLICATION
+# ----------------------------------------------------------------------------
+deduplication:
+  bi_encoder_threshold: 0.50
+  cross_encoder_threshold: 0.70
+  cross_encoder_model: "cross-encoder/stsb-distilroberta-base"
+
+# ----------------------------------------------------------------------------
+# ENTITY EXTRACTION
+# ----------------------------------------------------------------------------
+entity_extraction:
+  spacy_model: "en_core_web_sm"
+  use_spacy: true
+  event_keywords:
+    - "dividend"
+    - "buyback"
+    - "merger"
+    - "acquisition"
+    - "ipo"
+    - "earnings"
+
+# ----------------------------------------------------------------------------
+# SENTIMENT ANALYSIS (UPDATED FOR LLM)
+# ----------------------------------------------------------------------------
+sentiment_analysis:
+  method: "llm"  # UPDATED: Now uses pure LLM approach  
+  
+  llm_sentiment:
+    use_entity_context: true  # Include entity context in prompts
+    few_shot_examples: true   # Use few-shot prompting
+
+# ----------------------------------------------------------------------------
+# VECTOR STORE
+# ----------------------------------------------------------------------------
+vector_store:
+  collection_name: "financial_news"
+  persist_directory: "data/chroma_db"
+  embedding_model: "all-mpnet-base-v2"
+  distance_metric: "cosine"
+
+# ----------------------------------------------------------------------------
+# QUERY PROCESSING (UPDATED WITH LLM ROUTING)
+# ----------------------------------------------------------------------------
+query_processing:
+  default_top_k: 10
+  min_similarity: 0.3
+  
+  # LLM-based query routing configuration
+  llm_routing:
+    enabled: true
+    confidence_threshold: 0.6  # Minimum confidence for strategy selection
+    fallback_strategy: "semantic_search"  # If confidence too low
+    max_entities_per_query: 10
+    enable_query_expansion: true
+  
+  # Strategy-specific weights for reranking
+  strategy_weights:
+    direct_entity: 0.7  # Weight for strategy vs semantic in final score
+    sector_wide: 0.5
+    regulatory: 0.6
+    sentiment_driven: 0.5
+    semantic_search: 0.3
+  
+  multi_query:
+    max_context_queries: 3
+    initial_retrieval_multiplier: 2
+  
+  reranking_weights:
+    direct_mention:
+      strategy_weight: 0.7
+      semantic_weight: 0.3
+  
+  sentiment_boost:
+    enabled: true
+    max_multiplier: 1.5
+
+# ----------------------------------------------------------------------------
+# STOCK IMPACT & SUPPLY CHAIN
+# ----------------------------------------------------------------------------
+stock_impact:
+  confidence_thresholds:
+    direct: 0.80
+    sector: 0.70
+    regulatory: 0.50
+  fuzzy_match_threshold: 0.80
+
+supply_chain:
+  traversal_depth: 1
+  min_impact_score: 25.0
+  weight_decay: 0.8
+
+# ----------------------------------------------------------------------------
+# LLM CONFIGURATION
+# ----------------------------------------------------------------------------
+llm:
+  provider: "groq"
+  model: "llama-3.3-70b-versatile"
+  temperature: 0.1
+  max_tokens: 4096
+  timeout: 30
+  max_retries: 3
+  
+  models:
+    fast: "llama-3.1-8b-instant"
+    reasoning: "llama-3.3-70b-versatile"  # Used for sentiment analysis
+    structured: "llama-3.3-70b-versatile"
+  
+  features:
+    entity_extraction: true
+    stock_mapping: true
+    sentiment_analysis: true  
+    supply_chain: true
+    query_expansion: true
+
+# ----------------------------------------------------------------------------
+# API & INFRASTRUCTURE
+# ----------------------------------------------------------------------------
+api:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true
+  workers: 4
+  title: "Financial News Intelligence API"
+  description: "Multi-agent AI system with full LLM pipeline"
+  version: "2.0.0"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+performance:
+  cache_embeddings: true
+  batch_size: 32
+  num_workers: 4
+
+development:
+  debug: false
+  use_mock_data: false
+  mock_data_path: "mock_news_data.json"
