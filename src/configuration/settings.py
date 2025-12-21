@@ -38,7 +38,7 @@ class PromptConfig(BaseModel):
 class MongoDBConfig(BaseModel):
     """MongoDB configuration for article storage."""
     connection_string: Optional[str] = None # Handled dynamically in loader
-    database_name: str = "marketmuni"
+    database_name: str = "MarketMuni"
     collection_name: str = "articles"
     max_pool_size: int = 100
     timeout_ms: int = 5000

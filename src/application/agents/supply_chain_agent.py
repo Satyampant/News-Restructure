@@ -40,6 +40,8 @@ class SupplyChainAgent:
             system_message=system_message
         )
         
+        if isinstance(result, dict):
+            result = SupplyChainImpactSchema.model_validate(result)
 
         # Process results using domain service (filter/sort)
         validated = self.service.process_impacts(
