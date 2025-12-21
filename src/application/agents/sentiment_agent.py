@@ -46,6 +46,9 @@ class SentimentAnalysisAgent:
             system_message=system_message
         )
         
+        if isinstance(result, dict):
+            result = SentimentAnalysisSchema.model_validate(result)
+
         # Validate scores using domain service
         validated = self.scorer.validate_scores(result)
         

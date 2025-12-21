@@ -1,4 +1,4 @@
-# FastAPI dependency injection
+# src/interfaces/rest/dependencies.py
 from functools import lru_cache
 from typing import Optional
 
@@ -39,15 +39,20 @@ def get_config_cached() -> Config:
     return get_config()
 
 # Infrastructure dependencies
+# FIX: Removed arguments from cached functions to avoid "unhashable type: Config" error.
+# We call get_config_cached() directly inside instead.
+
 @lru_cache()
-def get_llm_client(config: Config = Depends(get_config_cached)) -> GroqLLMClient:
+def get_llm_client() -> GroqLLMClient:
+    config = get_config_cached()
     return GroqLLMClient(
         model=config.llm.model,
         temperature=config.llm.temperature
     )
 
 @lru_cache()
-def get_mongodb_client(config: Config = Depends(get_config_cached)) -> MongoDBClient:
+def get_mongodb_client() -> MongoDBClient:
+    config = get_config_cached()
     client = MongoDBClient(
         connection_string=config.mongodb.connection_string,
         database_name=config.mongodb.database_name
@@ -55,6 +60,7 @@ def get_mongodb_client(config: Config = Depends(get_config_cached)) -> MongoDBCl
     client.connect()
     return client
 
+# This is NOT cached, so it can accept arguments via Depends without issues
 def get_article_repository(
     mongo: MongoDBClient = Depends(get_mongodb_client),
     config: Config = Depends(get_config_cached)
@@ -65,7 +71,8 @@ def get_article_repository(
     )
 
 @lru_cache()
-def get_redis_service(config: Config = Depends(get_config_cached)) -> RedisCacheService:
+def get_redis_service() -> RedisCacheService:
+    config = get_config_cached()
     return RedisCacheService(
         host=config.redis.host,
         port=config.redis.port,
@@ -73,16 +80,16 @@ def get_redis_service(config: Config = Depends(get_config_cached)) -> RedisCache
     )
 
 @lru_cache()
-def get_embedding_service(config: Config = Depends(get_config_cached)) -> EmbeddingService:
+def get_embedding_service() -> EmbeddingService:
+    config = get_config_cached()
     return EmbeddingService(
         model_name=config.vector_store.embedding_model
     )
 
 @lru_cache()
-def get_vector_store(
-    config: Config = Depends(get_config_cached),
-    embedding_service: EmbeddingService = Depends(get_embedding_service)
-) -> ChromaDBClient:
+def get_vector_store() -> ChromaDBClient:
+    config = get_config_cached()
+    embedding_service = get_embedding_service() # Call directly
     return ChromaDBClient(
         collection_name=config.vector_store.collection_name,
         persist_directory=config.vector_store.persist_directory,
@@ -90,23 +97,27 @@ def get_vector_store(
     )
 
 # Agent dependencies
+# Updated these to also be parameterless for consistency and safety with lru_cache
+
 @lru_cache()
-def get_entity_agent(
-    llm: GroqLLMClient = Depends(get_llm_client),
-    cache: RedisCacheService = Depends(get_redis_service)
-) -> EntityExtractionAgent:
+def get_entity_agent() -> EntityExtractionAgent:
+    llm = get_llm_client()
+    cache = get_redis_service()
     return EntityExtractionAgent(llm_client=llm, cache_service=cache)
 
 @lru_cache()
-def get_sentiment_agent(llm: GroqLLMClient = Depends(get_llm_client)) -> SentimentAnalysisAgent:
+def get_sentiment_agent() -> SentimentAnalysisAgent:
+    llm = get_llm_client()
     return SentimentAnalysisAgent(llm_client=llm)
 
 @lru_cache()
-def get_stock_impact_agent(llm: GroqLLMClient = Depends(get_llm_client)) -> StockImpactAgent:
+def get_stock_impact_agent() -> StockImpactAgent:
+    llm = get_llm_client()
     return StockImpactAgent(llm_client=llm)
 
 @lru_cache()
-def get_supply_chain_agent(llm: GroqLLMClient = Depends(get_llm_client)) -> SupplyChainAgent:
+def get_supply_chain_agent() -> SupplyChainAgent:
+    llm = get_llm_client()
     return SupplyChainAgent(llm_client=llm)
 
 @lru_cache()
@@ -114,9 +125,11 @@ def get_deduplication_agent() -> DeduplicationAgent:
     return DeduplicationAgent()
 
 @lru_cache()
-def get_query_router_agent(llm: GroqLLMClient = Depends(get_llm_client)) -> QueryRouterAgent:
+def get_query_router_agent() -> QueryRouterAgent:
+    llm = get_llm_client()
     return QueryRouterAgent(llm_client=llm)
 
+# Query Processor is NOT cached (it holds request-specific logic if any), so it can use Depends
 def get_query_processor_agent(
     article_repo: ArticleRepository = Depends(get_article_repository),
     vector_store: ChromaDBClient = Depends(get_vector_store),
@@ -153,7 +166,7 @@ def get_process_article_use_case(
     
     entity_node = EntityExtractionNode(entity_agent=entity_agent)
     
-    impact_node = ImpactMappingNode(stock_agent=stock_agent)
+    impact_node = ImpactMappingNode(impact_agent=stock_agent)
     
     sentiment_node = SentimentAnalysisNode(sentiment_agent=sentiment_agent)
     

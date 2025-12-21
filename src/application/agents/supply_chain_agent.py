@@ -39,6 +39,7 @@ class SupplyChainAgent:
             schema=SupplyChainImpactSchema,
             system_message=system_message
         )
+        
 
         # Process results using domain service (filter/sort)
         validated = self.service.process_impacts(
