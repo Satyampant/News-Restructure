@@ -1,8 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional, Dict, Any
 
 class ArticleOutput(BaseModel):
     """Output model for article with enriched data"""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     title: str
     content: str
