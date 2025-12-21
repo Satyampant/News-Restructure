@@ -5,3 +5,4 @@ __pycache__/
 create_project_structure.py
 mock_news_data.json
 data/
+tests/

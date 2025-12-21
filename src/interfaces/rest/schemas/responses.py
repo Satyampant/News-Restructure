@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional, Dict, Any
+from datetime import datetime
 
 class ArticleOutput(BaseModel):
     """Output model for article with enriched data"""
@@ -9,7 +10,7 @@ class ArticleOutput(BaseModel):
     title: str
     content: str
     source: str
-    timestamp: str
+    timestamp: datetime
     entities: Optional[Dict[str, List[str]]] = None
     impacted_stocks: Optional[List[Dict[str, Any]]] = None
     relevance_score: Optional[float] = None
