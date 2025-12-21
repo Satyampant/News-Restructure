@@ -1,6 +1,9 @@
 from src.application.workflows.state import NewsIntelligenceState
 from src.infrastructure.storage.mongodb.article_repository import ArticleRepository
 from src.infrastructure.storage.vector.chroma_client import ChromaDBClient
+import logging
+
+logger = logging.getLogger(__name__)
 
 class IndexingNode:
     """Persists processed article to databases."""
@@ -23,18 +26,18 @@ class IndexingNode:
         
         # Index in ChromaDB
         if article_embedding:
-            self.vector.index_article(article, embedding=article_embedding)
+            self.vector.index_article(
+                article_id=article.id, 
+                embedding=article_embedding
+            )
         else:
-            # Fallback computation if missing (should be caught earlier, but safe to keep)
-            self.vector.index_article(article)
+            logger.warning(f"Skipping vector indexing for article {article.id}: No embedding provided.")
         
         stats = {
             "indexed": True,
             "indexed_in_mongo": bool(mongo_id),
-            "indexed_in_chroma": True,
+            "indexed_in_chroma": article_embedding is not None,
             "embedding_reused": article_embedding is not None,
-            # Note: repository might not expose total count directly for performance
-            # ignoring article_count() to keep node logic pure
         }
         
         return {
