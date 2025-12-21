@@ -3,12 +3,14 @@ from datetime import datetime
 from src.infrastructure.storage.mongodb.client import MongoDBClient
 from src.infrastructure.storage.vector.chroma_client import ChromaDBClient
 
+from src.interfaces.rest.dependencies import get_mongodb_client, get_vector_store
+
 router = APIRouter()
 
 @router.get("/health")
 async def health_check(
-    mongo: MongoDBClient = Depends(),
-    vector: ChromaDBClient = Depends()
+    mongo: MongoDBClient = Depends(get_mongodb_client),
+    vector: ChromaDBClient = Depends(get_vector_store)
 ):
     """Comprehensive health check."""
     return {

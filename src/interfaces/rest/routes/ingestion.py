@@ -4,12 +4,14 @@ from src.interfaces.rest.schemas.responses import IngestResponse
 from src.application.use_cases.process_article import ProcessArticleUseCase
 from src.domain.models.article import NewsArticle
 
+from src.interfaces.rest.dependencies import get_process_article_use_case
+
 router = APIRouter()
 
 @router.post("/ingest", response_model=IngestResponse)
 async def ingest_article(
     article_input: ArticleInput,
-    use_case: ProcessArticleUseCase = Depends()
+    use_case: ProcessArticleUseCase = Depends(get_process_article_use_case)
 ):
     """Ingest a financial news article."""
     try:

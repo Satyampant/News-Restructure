@@ -4,11 +4,13 @@ from src.infrastructure.storage.mongodb.queries import (
     build_sentiment_aggregation_pipeline,
     build_supply_chain_aggregation_pipeline
 )
+from src.interfaces.rest.dependencies import get_article_repository
+
 
 router = APIRouter()
 
 @router.get("/stats")
-async def get_stats(repo: ArticleRepository = Depends()):
+async def get_stats(repo: ArticleRepository = Depends(get_article_repository)):
     """Retrieve system statistics."""
     # Using the repository to access the underlying collection for aggregations
     # Note: In a stricter repository pattern, these would be methods on the repository itself,

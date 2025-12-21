@@ -1,12 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
 from src.infrastructure.storage.mongodb.article_repository import ArticleRepository
 
+from src.interfaces.rest.dependencies import get_article_repository
+
 router = APIRouter()
 
 @router.get("/article/{article_id}")
 async def get_article(
     article_id: str,
-    repo: ArticleRepository = Depends()
+    repo: ArticleRepository = Depends(get_article_repository)
 ):
     """Retrieve article by ID with full analysis."""
     article = repo.get_article_by_id(article_id)
@@ -44,7 +46,7 @@ async def get_article(
 @router.get("/article/{article_id}/sentiment")
 async def get_article_sentiment(
     article_id: str,
-    repo: ArticleRepository = Depends()
+    repo: ArticleRepository = Depends(get_article_repository)
 ):
     """Get sentiment analysis details."""
     article = repo.get_article_by_id(article_id)
