@@ -18,6 +18,8 @@ from src.application.agents.sentiment_agent import SentimentAnalysisAgent
 from src.application.agents.stock_impact_agent import StockImpactAgent
 from src.application.agents.supply_chain_agent import SupplyChainAgent
 from src.application.agents.deduplication_agent import DeduplicationAgent
+from src.application.agents.query_router_agent import QueryRouterAgent
+from src.application.agents.query_processor_agent import QueryProcessorAgent
 
 from src.application.nodes.ingestion.ingestion_node import IngestionNode
 from src.application.nodes.ingestion.deduplication_node import DeduplicationNode
@@ -29,6 +31,7 @@ from src.application.nodes.ingestion.indexing_node import IndexingNode
 
 from src.application.workflows.ingestion_graph import build_ingestion_graph
 from src.application.use_cases.process_article import ProcessArticleUseCase
+from src.application.use_cases.execute_query import ExecuteQueryUseCase
 
 # Singleton config
 @lru_cache()
@@ -110,6 +113,23 @@ def get_supply_chain_agent(llm: GroqLLMClient = Depends(get_llm_client)) -> Supp
 def get_deduplication_agent() -> DeduplicationAgent:
     return DeduplicationAgent()
 
+@lru_cache()
+def get_query_router_agent(llm: GroqLLMClient = Depends(get_llm_client)) -> QueryRouterAgent:
+    return QueryRouterAgent(llm_client=llm)
+
+def get_query_processor_agent(
+    article_repo: ArticleRepository = Depends(get_article_repository),
+    vector_store: ChromaDBClient = Depends(get_vector_store),
+    query_router: QueryRouterAgent = Depends(get_query_router_agent),
+    config: Config = Depends(get_config_cached)
+) -> QueryProcessorAgent:
+    return QueryProcessorAgent(
+        article_repo=article_repo,
+        vector_store=vector_store,
+        query_router=query_router,
+        config=config
+    )
+
 # Use case dependencies
 def get_process_article_use_case(
     embedding_service: EmbeddingService = Depends(get_embedding_service),
@@ -156,6 +176,11 @@ def get_process_article_use_case(
     )
     
     return ProcessArticleUseCase(graph=graph)
+
+def get_execute_query_use_case(
+    query_processor: QueryProcessorAgent = Depends(get_query_processor_agent)
+) -> ExecuteQueryUseCase:
+    return ExecuteQueryUseCase(query_processor=query_processor)
 
 def setup_dependencies(app: FastAPI):
     """Configure dependency injection for the app."""

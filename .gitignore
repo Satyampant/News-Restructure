@@ -1,0 +1,5 @@
+.env
+.venv/
+uv.lock
+__pycache__/
+create_project_structure.py
