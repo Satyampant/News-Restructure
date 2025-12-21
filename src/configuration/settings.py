@@ -143,12 +143,6 @@ class APIConfig(BaseModel):
     description: str = "Multi-agent AI system for processing and querying financial news"
     version: str = "1.0.0"
 
-class ResourcesConfig(BaseModel):
-    company_aliases: str = "company_aliases.json"
-    sector_tickers: str = "sector_tickers.json"
-    regulators: str = "regulators.json"
-    regulator_impact: str = "regulator_sector_impact.json"
-    supply_chain_graph: str = "supply_chain_graph.json"
 
 class LoggingConfig(BaseModel):
     level: str = "INFO"
@@ -177,7 +171,6 @@ class Config(BaseModel):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     redis: RedisConfig = Field(default_factory=RedisConfig)
     api: APIConfig = Field(default_factory=APIConfig)
-    resources: ResourcesConfig = Field(default_factory=ResourcesConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     performance: PerformanceConfig = Field(default_factory=PerformanceConfig)
     development: DevelopmentConfig = Field(default_factory=DevelopmentConfig)

@@ -23,7 +23,6 @@ from src.configuration.settings import (
     LLMFeaturesConfig,
     RedisConfig,
     APIConfig,
-    ResourcesConfig,
     LoggingConfig,
     PerformanceConfig,
     DevelopmentConfig,
@@ -37,59 +36,100 @@ from src.configuration.settings import (
 
 load_dotenv()
 
-# Resolve project root (src/configuration/ -> src/ -> root)
+# Resolve paths
+# src/configuration/loader.py -> src/configuration/ -> src/ -> root
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-CONFIG_FILE = ROOT_DIR / "config.yaml"
-PROMPTS_FILE = ROOT_DIR / "prompts.yaml"
+CONFIG_DIR = ROOT_DIR / "config"
+PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 
-def load_prompts(prompts_path: Path) -> PromptConfig:
-    """Load prompts from YAML file."""
+# Determine which config file to use based on environment
+ENV = os.getenv("ENV", "development")
+CONFIG_FILE = CONFIG_DIR / f"{ENV}.yaml"
+
+def load_prompts(prompts_dir: Path) -> PromptConfig:
+    """Load prompts from individual YAML files in prompts directory."""
     prompts_config = PromptConfig()
+    
     try:
-        if not prompts_path.exists():
-            print(f"⚠ Prompts file not found: {prompts_path}")
+        if not prompts_dir.exists():
+            print(f"⚠ Prompts directory not found: {prompts_dir}")
+            print(f"  Creating empty prompts directory at: {prompts_dir}")
+            prompts_dir.mkdir(parents=True, exist_ok=True)
             return prompts_config
-
-        with open(prompts_path, 'r') as f:
-            prompts_data = yaml.safe_load(f) or {}
         
-        p = prompts_data.get('entity_extraction', {})
-        prompts_config.entity_extraction = EntityExtractionPrompts(
-            system_message=p.get('system_message', ''),
-            task_prompt=p.get('task_prompt', ''),
-            entity_context_format=p.get('entity_context_format', '')
-        )
+        # Load entity_extraction.yaml
+        entity_file = prompts_dir / "entity_extraction.yaml"
+        if entity_file.exists():
+            with open(entity_file, 'r') as f:
+                data = yaml.safe_load(f) or {}
+            prompts_config.entity_extraction = EntityExtractionPrompts(
+                system_message=data.get('system_message', ''),
+                task_prompt=data.get('task_prompt', ''),
+                entity_context_format=data.get('entity_context_format', '')
+            )
+            print(f"  ✓ Loaded entity_extraction.yaml")
+        else:
+            print(f"  ⚠ entity_extraction.yaml not found")
         
-        p = prompts_data.get('sentiment_analysis', {})
-        prompts_config.sentiment_analysis = SentimentAnalysisPrompts(
-            system_message=p.get('system_message', ''),
-            task_prompt=p.get('task_prompt', ''),
-            few_shot_examples=p.get('few_shot_examples', '')
-        )
-
-        p = prompts_data.get('stock_impact', {})
-        prompts_config.stock_impact = StockMappingPrompts(
-            system_message=p.get('system_message', ''),
-            task_prompt=p.get('task_prompt', '')
-        )
-
-        p = prompts_data.get('supply_chain', {})
-        prompts_config.supply_chain = SupplyChainPrompts(
-            system_message=p.get('system_message', ''),
-            task_prompt=p.get('task_prompt', ''),
-            few_shot_examples=p.get('few_shot_examples', '')
-        )
-
-        p = prompts_data.get('query_routing', {})
-        prompts_config.query_routing = QueryRoutingPrompts(
-            system_message=p.get('system_message', ''),
-            task_prompt=p.get('task_prompt', ''),
-            few_shot_examples=p.get('few_shot_examples', '')
-        )
-            
-        print(f"✓ Prompts loaded from {prompts_path}")
+        # Load sentiment_analysis.yaml
+        sentiment_file = prompts_dir / "sentiment_analysis.yaml"
+        if sentiment_file.exists():
+            with open(sentiment_file, 'r') as f:
+                data = yaml.safe_load(f) or {}
+            prompts_config.sentiment_analysis = SentimentAnalysisPrompts(
+                system_message=data.get('system_message', ''),
+                task_prompt=data.get('task_prompt', ''),
+                few_shot_examples=data.get('few_shot_examples', '')
+            )
+            print(f"  ✓ Loaded sentiment_analysis.yaml")
+        else:
+            print(f"  ⚠ sentiment_analysis.yaml not found")
+        
+        # Load stock_impact.yaml
+        stock_file = prompts_dir / "stock_impact.yaml"
+        if stock_file.exists():
+            with open(stock_file, 'r') as f:
+                data = yaml.safe_load(f) or {}
+            prompts_config.stock_impact = StockMappingPrompts(
+                system_message=data.get('system_message', ''),
+                task_prompt=data.get('task_prompt', '')
+            )
+            print(f"  ✓ Loaded stock_impact.yaml")
+        else:
+            print(f"  ⚠ stock_impact.yaml not found")
+        
+        # Load supply_chain.yaml
+        supply_file = prompts_dir / "supply_chain.yaml"
+        if supply_file.exists():
+            with open(supply_file, 'r') as f:
+                data = yaml.safe_load(f) or {}
+            prompts_config.supply_chain = SupplyChainPrompts(
+                system_message=data.get('system_message', ''),
+                task_prompt=data.get('task_prompt', ''),
+                few_shot_examples=data.get('few_shot_examples', '')
+            )
+            print(f"  ✓ Loaded supply_chain.yaml")
+        else:
+            print(f"  ⚠ supply_chain.yaml not found")
+        
+        # Load query_routing.yaml
+        query_file = prompts_dir / "query_routing.yaml"
+        if query_file.exists():
+            with open(query_file, 'r') as f:
+                data = yaml.safe_load(f) or {}
+            prompts_config.query_routing = QueryRoutingPrompts(
+                system_message=data.get('system_message', ''),
+                task_prompt=data.get('task_prompt', ''),
+                few_shot_examples=data.get('few_shot_examples', '')
+            )
+            print(f"  ✓ Loaded query_routing.yaml")
+        else:
+            print(f"  ⚠ query_routing.yaml not found")
+        
+        print(f"✓ Prompts loading completed from {prompts_dir}")
+        
     except Exception as e:
-        print(f"⚠ Error loading prompts file: {e}")
+        print(f"⚠ Error loading prompts: {e}")
     
     return prompts_config
 
@@ -103,8 +143,14 @@ def load_config(config_path: Optional[Path] = None) -> Config:
         if config_path.exists():
             with open(config_path, 'r') as f:
                 yaml_data = yaml.safe_load(f) or {}
+            print(f"✓ Config loaded from {config_path}")
         else:
-            print(f"⚠ Config file not found at {config_path}, using defaults.")
+            print(f"⚠ Config file not found at {config_path}")
+            print(f"  Available config files in {CONFIG_DIR}:")
+            if CONFIG_DIR.exists():
+                for file in CONFIG_DIR.glob("*.yaml"):
+                    print(f"    - {file.name}")
+            print(f"  Using default configuration values")
         
         config = Config()
         
@@ -290,16 +336,17 @@ def load_config(config_path: Optional[Path] = None) -> Config:
             enable_profiling=dev.get('enable_profiling', False)
         )
         
-        # Load Prompts
-        config.prompts = load_prompts(PROMPTS_FILE)
+        # Load Prompts from individual files
+        config.prompts = load_prompts(PROMPTS_DIR)
         
-        print(f"✓ Configuration loaded from {config_path}")
         return config
         
     except Exception as e:
         print(f"⚠ Error loading config file: {e}")
         print("  Using default configuration values")
-        return Config()
+        config = Config()
+        config.prompts = load_prompts(PROMPTS_DIR)
+        return config
 
 # Singleton instance
 _config_instance: Optional[Config] = None
