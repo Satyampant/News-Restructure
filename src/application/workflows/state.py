@@ -6,6 +6,9 @@ from src.domain.models.article import NewsArticle
 from src.domain.models.entities import EntityExtractionSchema
 from src.domain.models.sentiment import SentimentAnalysisSchema
 
+def merge_dicts(a: Dict, b: Dict) -> Dict:
+    return {**a, **b}
+
 class NewsIntelligenceState(TypedDict):
     """
     State definition for the news processing pipeline.
@@ -25,4 +28,4 @@ class NewsIntelligenceState(TypedDict):
     sentiment_filter: Optional[str]
     query_results: Annotated[List[NewsArticle], operator.add]
     error: Optional[str]
-    stats: dict
+    stats: Annotated[dict, merge_dicts]

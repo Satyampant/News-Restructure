@@ -31,11 +31,23 @@ async def ingest_article(
         if result.get("error"):
             raise HTTPException(status_code=400, detail=result["error"])
         
+        final_stats = result.get("stats", {})
+
         return IngestResponse(
             success=True,
             article_id=article.id,
             message="Article processed successfully",
-            stats=result.get("stats", {})
+            is_duplicate=final_stats.get("is_duplicate", False),
+            duplicates_found=final_stats.get("duplicates_found", 0),
+            entities_extracted=final_stats.get("entities_extracted", {}),
+            stocks_impacted=final_stats.get("stocks_impacted", 0),
+            
+            # Map optional fields
+            sentiment_classification=final_stats.get("sentiment_classification"),
+            sentiment_confidence=final_stats.get("sentiment_confidence"),
+            signal_strength=final_stats.get("sentiment_signal_strength"),
+            
+            stats=final_stats
         )
         
     except Exception as e:
